@@ -122,7 +122,7 @@
             border-bottom: 1px solid #333;
         }
 
-        .row:-child {
+        .row:last-child {
             border-bottom: none;
         }
 
@@ -362,92 +362,6 @@
         </button>
 
     </div>
-    
-    
-<!-- LAST BLOCK MINED -->
-
-<div class="box">
-
-    <h2>Last Block Mined</h2>
-
-    <div id="lastBlockStatus">
-        Loading...
-    </div>
-
-    <div
-        id="lastBlockInfo"
-        class="block-info"
-        style="display: none;"
-    >
-
-        <div class="row">
-
-            <div class="label">
-                Block ID
-            </div>
-
-            <div
-                id="lastBlockId"
-                class="value"
-            ></div>
-
-        </div>
-
-        <div class="row">
-
-            <div class="label">
-                Mined By
-            </div>
-
-            <div
-                id="lastBlockMiner"
-                class="value"
-            ></div>
-
-        </div>
-
-        <div class="row">
-
-            <div class="label">
-                Time Mined
-            </div>
-
-            <div
-                id="lastBlockTime"
-                class="value"
-            ></div>
-
-        </div>
-
-        <div class="row">
-
-            <div class="label">
-                Block Hash
-            </div>
-
-            <div
-                id="lastBlockHash"
-                class="value"
-            ></div>
-
-        </div>
-
-        <div class="row">
-
-            <div class="label">
-                Colour
-            </div>
-
-            <div
-                id="lastBlockColor"
-                class="value"
-            ></div>
-
-        </div>
-
-    </div>
-
-</div>
 
 
     <!-- PENDING BLOCK -->
@@ -737,180 +651,6 @@ function setRandomButtonColor() {
  */
 
 setRandomButtonColor();
-
-/*
- * Last Block Mined
- */
-
-async function getLastBlock() {
-
-    const status =
-        document.getElementById("lastBlockStatus");
-
-    const blockInfo =
-        document.getElementById("lastBlockInfo");
-
-    try {
-
-        status.textContent = "Loading...";
-        status.className = "loading";
-
-        const response = await fetch(
-            "https://api.starch.one/blockchain/last_block",
-            {
-                method: "GET",
-                cache: "no-store"
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                "HTTP " + response.status
-            );
-        }
-
-        const block =
-            await response.json();
-
-        /*
-         * Block ID
-         */
-
-        document.getElementById(
-            "lastBlockId"
-        ).textContent =
-            block.block_id ?? "Not provided";
-
-
-        /*
-         * Miner
-         */
-
-        document.getElementById(
-            "lastBlockMiner"
-        ).textContent =
-            block.miner_id ?? "Not provided";
-
-
-        /*
-         * Time mined
-         */
-
-        if (block.timestamp) {
-
-            const date =
-                new Date(
-                    Number(block.timestamp) * 1000
-                );
-
-            document.getElementById(
-                "lastBlockTime"
-            ).textContent =
-                date.toLocaleString(
-                    "en-GB",
-                    {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit"
-                    }
-                );
-
-        } else {
-
-            document.getElementById(
-                "lastBlockTime"
-            ).textContent =
-                "Not provided";
-        }
-
-
-        /*
-         * Hash
-         */
-
-        document.getElementById(
-            "lastBlockHash"
-        ).textContent =
-            block.hash ?? "Not provided";
-
-
-        /*
-         * Colour
-         */
-
-        const colorElement =
-            document.getElementById(
-                "lastBlockColor"
-            );
-
-        colorElement.innerHTML = "";
-
-        if (block.color) {
-
-            const colorBox =
-                document.createElement("span");
-
-            colorBox.className =
-                "color-box";
-
-            colorBox.style.backgroundColor =
-                block.color;
-
-            colorElement.appendChild(
-                colorBox
-            );
-
-            colorElement.appendChild(
-                document.createTextNode(
-                    block.color
-                )
-            );
-
-        } else {
-
-            colorElement.textContent =
-                "Not provided";
-        }
-
-
-        /*
-         * Show block information
-         */
-
-        blockInfo.style.display =
-            "block";
-
-        status.textContent =
-            "Latest block";
-
-        status.className =
-            "success";
-
-
-    } catch (error) {
-
-        console.error(
-            "Last block error:",
-            error
-        );
-
-        status.textContent =
-            "Unable to retrieve last block";
-
-        status.className =
-            "error";
-    }
-}
-
-
-/*
- * Load the last block
- */
-
-getLastBlock();
 
 
 /*
@@ -1692,12 +1432,9 @@ setInterval(
                 .trim();
 
 
-        getLastBlock();
+        if (minerId) {
 
-if (minerId) {
-
-    checkMiner();
-}
+            checkMiner();
         }
 
     },
