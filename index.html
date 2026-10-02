@@ -747,7 +747,7 @@ async function checkPendingBlock(minerId) {
             "minerDisplay"
         );
 
-    const blockInfo =
+    Info =
         document.getElementById(
             "blockInfo"
         );
@@ -1204,7 +1204,13 @@ async function getMinerSnapshot(minerId) {
 
 
                             const block =
-                                await response.json();
+    await response.json();
+
+console.log(
+    "Attendance block",
+    blockId,
+    block
+);
 
 
                             /*
