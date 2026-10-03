@@ -1125,169 +1125,256 @@ async function getMinerSnapshot(minerId) {
          */
 
         const attendanceSection =
-            document.getElementById(
-                "attendanceSection"
+    document.getElementById(
+        "attendanceSection"
+    );
+
+const attendanceList =
+    document.getElementById(
+        "attendanceList"
+    );
+
+
+/*
+ * Clear the previous attendance blocks
+ */
+
+attendanceList.innerHTML = "";
+
+
+/*
+ * Only show attendance when attendance
+ * data exists.
+ */
+
+if (
+    Array.isArray(data.attendance) &&
+    data.attendance.length > 0
+) {
+
+    attendanceSection.style.display =
+        "block";
+
+
+    /*
+     * Process blocks one at a time.
+     *
+     * This deliberately avoids sending
+     * many API requests simultaneously.
+     */
+
+    for (
+        let index = 0;
+        index < data.attendance.length;
+        index++
+    ) {
+
+        const blockId =
+            data.attendance[index];
+
+
+        const item =
+            document.createElement(
+                "div"
             );
 
-        
-const attendancePromises =
-    data.attendance.map(
-        async function(blockId, index) {
 
-            const item =
-                document.createElement(
-                    "div"
+        item.className =
+            "attendance-block attendance-loading";
+
+
+        item.textContent =
+            blockId;
+
+
+        item.title =
+            "Block " +
+            blockId;
+
+
+        attendanceList.appendChild(
+            item
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    "https://api.starch.one/blockchain/id/"
+                    + encodeURIComponent(
+                        blockId
+                    )
                 );
 
-            item.className =
-                "attendance-block attendance-loading";
 
-            item.textContent =
-                blockId;
+            if (!response.ok) {
 
-            item.title =
-                "Block " +
-                blockId;
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
+            }
 
-            attendanceList.appendChild(
-                item
-            );
+
+            const block =
+                await response.json();
+
 
             /*
-             * Stagger requests so we do not hit
-             * the API rate limit (HTTP 429).
-             *
-             * Each block waits 150ms longer than
-             * the previous block before requesting
-             * its colour.
+             * Only use a valid colour
+             * returned by the API.
              */
-            await new Promise(
-                function(resolve) {
-                    setTimeout(
-                        resolve,
-                        index * 150
-                    );
-                }
-            );
 
-            try {
+            if (
+                block.color &&
+                CSS.supports(
+                    "background-color",
+                    block.color
+                )
+            ) {
 
-                const response =
-                    await fetch(
-                        "https://api.starch.one/blockchain/id/"
-                        + encodeURIComponent(
-                            blockId
-                        )
-                    );
+                item.style.backgroundColor =
+                    block.color;
 
-                if (!response.ok) {
-                    throw new Error(
-                        "HTTP " +
-                        response.status
-                    );
-                }
 
-                const block =
-                    await response.json();
-
-                /*
-                 * Only apply the colour if the API
-                 * has returned a valid CSS colour.
-                 */
-                if (
-                    block.color &&
-                    CSS.supports(
-                        "background-color",
+                item.style.color =
+                    getContrastColor(
                         block.color
-                    )
-                ) {
-
-                    item.style.backgroundColor =
-                        block.color;
-
-                    item.style.color =
-                        getContrastColor(
-                            block.color
-                        );
-
-                    item.style.borderColor =
-                        "rgba(255,255,255,0.25)";
-
-                    item.classList.remove(
-                        "attendance-loading"
                     );
 
-                    item.title =
-                        "Block " +
-                        blockId +
-                        " • " +
-                        block.color;
 
-                } else {
+                item.style.borderColor =
+                    "rgba(255,255,255,0.25)";
 
-                    console.warn(
-                        "No valid color returned for block " +
-                        blockId,
-                        block
-                    );
 
-                    item.classList.remove(
-                        "attendance-loading"
-                    );
-
-                    item.style.backgroundColor =
-                        "#555";
-
-                    item.style.color =
-                        "#fff";
-
-                    item.style.borderColor =
-                        "rgba(255,255,255,0.25)";
-
-                    item.title =
-                        "Block " +
-                        blockId +
-                        " • colour unavailable";
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Could not get color for block " +
-                    blockId,
-                    error
-                );
-
-                /*
-                 * Do not leave failed blocks black.
-                 * Give them a neutral visible colour
-                 * so an API error cannot be mistaken
-                 * for an actual block colour.
-                 */
                 item.classList.remove(
                     "attendance-loading"
                 );
 
+
+                item.title =
+                    "Block " +
+                    blockId +
+                    " • " +
+                    block.color;
+
+
+            } else {
+
+                console.warn(
+                    "No valid colour returned for block " +
+                    blockId,
+                    block
+                );
+
+
+                item.classList.remove(
+                    "attendance-loading"
+                );
+
+
                 item.style.backgroundColor =
                     "#555";
+
 
                 item.style.color =
                     "#fff";
 
-                item.style.borderColor =
-                    "rgba(255,255,255,0.25)";
 
                 item.title =
                     "Block " +
                     blockId +
                     " • colour unavailable";
             }
-        }
-    );
 
-await Promise.all(
-    attendancePromises
-);
+
+        } catch (error) {
+
+            console.error(
+                "Could not get color for block " +
+                blockId,
+                error
+            );
+
+
+            /*
+             * A failed API request must not
+             * appear as a black block.
+             */
+
+            item.classList.remove(
+                "attendance-loading"
+            );
+
+
+            item.style.backgroundColor =
+                "#555";
+
+
+            item.style.color =
+                "#fff";
+
+
+            item.style.borderColor =
+                "rgba(255,255,255,0.25)";
+
+
+            item.title =
+                "Block " +
+                blockId +
+                " • colour unavailable";
+
+
+            /*
+             * Wait 1 second after an error
+             * before trying the next block.
+             *
+             * This helps recover from HTTP 429.
+             */
+
+            await new Promise(
+                function(resolve) {
+
+                    setTimeout(
+                        resolve,
+                        1000
+                    );
+
+                }
+            );
+        }
+
+
+        /*
+         * Small delay between successful
+         * requests as well.
+         */
+
+        if (
+            index <
+            data.attendance.length - 1
+        ) {
+
+            await new Promise(
+                function(resolve) {
+
+                    setTimeout(
+                        resolve,
+                        250
+                    );
+
+                }
+            );
+        }
+    }
+
+
+} else {
+
+    attendanceSection.style.display =
+        "none";
+}
 
 
         } else {
